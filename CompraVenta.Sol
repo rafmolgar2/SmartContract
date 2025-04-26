@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CompraVenta {
+    address payable public vendedor;
+    address payable public comprador;
+    uint public precio;
+    bool public aceptadoPorVendedor = false;
+    bool public aceptadoPorComprador = false;
+
+    constructor(address payable _comprador, uint _precio) {
+        vendedor = payable(msg.sender);
+        comprador = _comprador;
+        precio = _precio;
+    }
+
+    function aceptarPorVendedor() public {
+        require(msg.sender == vendedor, "Solo el vendedor puede aceptar");
+        aceptadoPorVendedor = true;
+    }
+
+    function aceptarPorComprador() public payable {
+        require(msg.sender == comprador, "Solo el comprador puede aceptar");
+        require(msg.value == precio, "El monto enviado no coincide con el precio");
+        aceptadoPorComprador = true;
+    }
+
+    function ejecutarVenta() public {
+        require(aceptadoPorVendedor && aceptadoPorComprador, "Ambas partes deben aceptar");
+        vendedor.transfer(precio);
+    }
+
+    function cancelar() public {
+        require(msg.sender == comprador || msg.sender == vendedor, "No autorizado");
+        if (aceptadoPorComprador) {
+            payable(comprador).transfer(address(this).balance);
+        }
+        aceptadoPorVendedor = false;
+        aceptadoPorComprador = false;
+    }
+
+    function verBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+}
